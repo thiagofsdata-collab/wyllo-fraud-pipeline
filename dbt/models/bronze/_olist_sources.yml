@@ -18,13 +18,8 @@ sources:
       reshaped as the substrate for fraud-prevention feature engineering.
       Loaded daily (or streamed every minute by the synthetic generator)
       from S3 into DuckDB via the `httpfs` extension.
-    database: wyllo
     schema: raw
-    loader: s3_to_duckdb
-    loaded_at_field: _loaded_at
-    freshness:
-      warn_after: { count: 6, period: hour }
-      error_after: { count: 24, period: hour }
+    loader: load_raw_to_duckdb
 
     tables:
       # ---------------------------------------------------------------- orders
@@ -91,7 +86,7 @@ sources:
             description: Item price in BRL.
             data_tests:
               - not_null
-              - dbt_utils.expression_is_true:
+              - expression_is_true:
                   expression: ">= 0"
           - name: freight_value
             description: Shipping cost in BRL.
@@ -121,7 +116,7 @@ sources:
           - name: payment_value
             description: Payment amount in BRL.
             data_tests:
-              - dbt_utils.expression_is_true:
+              - expression_is_true:
                   expression: ">= 0"
 
       # ---------------------------------------------------------------- reviews

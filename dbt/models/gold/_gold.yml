@@ -1,0 +1,66 @@
+version: 2
+
+models:
+  - name: int_orders_enriched
+    description: >
+      Intermediate model: one row per order enriched with payment aggregates,
+      review score, primary seller, and customer<->seller geographic distance.
+      Feeds the feature store. Not consumed directly by analysts.
+    columns:
+      - name: order_id
+        description: Order identifier. Must be unique — multiplication here propagates to the feature store via joins.
+        data_tests: 
+            - not_null
+            - unique:
+                config:
+                  severity: error
+      - name: customer_unique_id
+        description: Stable customer identity.
+        data_tests: [not_null]
+      - name: order_value
+        description: Total paid for the order (sum of payment slices), BRL.
+        data_tests:
+          - expression_is_true:
+              expression: ">= 0"
+
+  - name: fct_customer_return_risk_features
+    description: >
+      THE FEATURE STORE. Grain is (customer_unique_id, snapshot_date) —
+      point-in-time correct. Each row describes a customer's behavioural
+      risk profile as of a given month, using only data available on or
+      before that date. Consumed by Data Science (model training), Fraud
+      Analysts (rule authoring), and Operations (dashboards).
+      All features are computed with FILTER (WHERE ts <= snapshot_date)
+      to guarantee no future leakage.
+    columns:
+      - name: customer_unique_id
+        description: Stable customer identity (part 1 of composite PK).
+        data_tests: [not_null]
+      - name: snapshot_date
+        description: Month-start date the snapshot describes (part 2 of PK).
+        data_tests: [not_null]
+      - name: total_orders_lifetime
+        description: Cumulative order count as of snapshot_date.
+        data_tests:
+          - expression_is_true:
+              expression: ">= 0"
+      - name: cancel_rate_lifetime
+        description: >
+          Fraction of lifetime orders cancelled after payment approval.
+          Chargeback proxy. Range 0-1.
+        data_tests:
+          - expression_is_true:
+              expression: "between 0 and 1"
+      - name: low_review_on_delivered_rate
+        description: >
+          Fraction of delivered orders with review score <= 2.
+          Item-not-received / friendly-fraud proxy. Range 0-1.
+        data_tests:
+          - expression_is_true:
+              expression: "between 0 and 1"
+    # Composite primary key uniqueness
+    data_tests:
+      - unique_combination:
+          combination_of_columns:
+            - customer_unique_id
+            - snapshot_date

@@ -1,6 +1,6 @@
 payment_type,base_risk_score,rationale
-credit_card,0.70,CNP fraud is overwhelmingly card-driven; highest base risk
-debit_card,0.30,Lower fraud rate than credit because of immediate fund check
-boleto,0.20,Brazilian bank slip, paid offline at agency, near-zero CNP fraud
-voucher,0.40,Promotional vouchers attract account-farming and abuse rings
-not_defined,0.60,Missing payment type is itself a quality signal — treat as elevated
+credit_card,0.70,"CNP fraud is overwhelmingly card-driven; highest base risk"
+debit_card,0.30,"Lower fraud rate than credit because of immediate fund check"
+boleto,0.20,"Brazilian bank slip, paid offline at agency, near-zero CNP fraud"
+voucher,0.40,"Promotional vouchers attract account-farming and abuse rings"
+not_defined,0.60,"Missing payment type is itself a quality signal — treat as elevated"

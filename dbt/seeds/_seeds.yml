@@ -12,7 +12,7 @@ seeds:
       - name: base_risk_score
         data_tests:
           - not_null
-          - dbt_utils.expression_is_true:
+          - expression_is_true:
               expression: "between 0 and 1"
 
   - name: risk_thresholds
@@ -42,5 +42,5 @@ seeds:
       - name: fraud_prior
         data_tests:
           - not_null
-          - dbt_utils.expression_is_true:
+          - expression_is_true:
               expression: "between 0 and 1"

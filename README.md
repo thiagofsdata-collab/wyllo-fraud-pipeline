@@ -16,10 +16,10 @@ segmentation possible.
 table where the decision becomes obvious.
 
 ```
-                                         ┌──────────────────────────────┐
-Olist CSVs → S3 → Bronze → Silver → Gold │ fct_customer_return_risk_features
-                                         │ PK: (customer, snapshot_date)
-                                         └─────────┬────────────────────┘
+                                         ┌───────────────────────────────────┐
+Olist CSVs → S3 → Bronze → Silver → Gold │ fct_customer_return_risk_features │
+                                         │ PK: (customer, snapshot_date)     │
+                                         └─────────┬─────────────────────────┘
                                                    │
                               ┌────────────────────┼────────────────────┐
                               ▼                    ▼                    ▼
@@ -29,13 +29,21 @@ Olist CSVs → S3 → Bronze → Silver → Gold │ fct_customer_return_risk_fe
 
 ## Status
 
+
 🟢 Layer 0 — Schema mapping, repo skeleton, design docs
+
 🟡 Layer 1 — Ingestion (S3 + Glue + Athena) — in progress
+
 ⚪ Layer 2 — dbt Bronze / Silver / Gold
+
 ⚪ Layer 3 — Dagster orchestration
+
 ⚪ Layer 4 — Streamlit pipeline health dashboard
+
 ⚪ Layer 5 — DataOps NL catalog utility
+
 ⚪ Layer 6 — Docker + CI
+
 
 ## Design documents (read these first)
 

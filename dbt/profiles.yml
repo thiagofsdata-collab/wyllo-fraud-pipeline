@@ -20,8 +20,6 @@ wyllo_fraud:
       type: duckdb
       # Relative to the dbt/ directory (dbt runs from there)
       path: "../data/warehouse/wyllo.duckdb"
-      extensions:
-        - parquet
       threads: 4
 
     dev:

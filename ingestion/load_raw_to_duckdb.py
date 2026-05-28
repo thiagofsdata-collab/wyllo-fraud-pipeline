@@ -116,24 +116,32 @@ def write_partitioned_parquet(con: duckdb.DuckDBPyConnection) -> None:
         SELECT
             o.*,
             COALESCE(fs.merchant_id, 'unknown_merchant') AS merchant_id,
-            CAST(o.order_purchase_timestamp AS DATE)     AS partition_date
+            strftime(CAST(o.order_purchase_timestamp AS DATE), '%Y-%m') AS partition_month
         FROM raw.olist_orders_dataset o
         LEFT JOIN first_seller fs
             ON o.order_id = fs.order_id AND fs.rn = 1;
         """
     )
 
-    out_path = (BRONZE_DIR / "orders").as_posix()
+    # Partition by month only. Partitioning additionally by merchant_id would
+    # create thousands of tiny directories (Olist has ~3k sellers) — the
+    # classic "small files problem". merchant_id stays as a column so the
+    # multi-tenant model is preserved; in production on S3 you'd partition by
+    # merchant_id too, with far fewer, larger tenants than Olist's sellers.
+    # Use an absolute, forward-slash path. DuckDB accepts forward slashes on
+    # Windows, and an absolute path avoids the temp-dir resolution bug that
+    # OVERWRITE_OR_IGNORE hits with relative paths on Windows.
+    out_path = BRONZE_DIR.resolve().joinpath("orders").as_posix()
     con.execute(
         f"""
         COPY (SELECT * FROM orders_with_merchant)
         TO '{out_path}'
-        (FORMAT PARQUET, PARTITION_BY (merchant_id, partition_date),
-         OVERWRITE_OR_IGNORE true);
+        (FORMAT PARQUET, PARTITION_BY (partition_month),
+         OVERWRITE true);
         """
     )
 
-    n_partitions = sum(1 for _ in BRONZE_DIR.glob("orders/merchant_id=*/**/*.parquet"))
+    n_partitions = sum(1 for _ in BRONZE_DIR.glob("orders/partition_month=*/**/*.parquet"))
     print(f"  Wrote partitioned Parquet to {out_path}/ ({n_partitions} part files)")
 
 

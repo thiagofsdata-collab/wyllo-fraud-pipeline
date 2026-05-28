@@ -1,0 +1,58 @@
+version: 2
+
+# Silver-layer schema tests. These enforce the cleaned/typed/deduped
+# contract that downstream Gold models depend on. If anything here breaks,
+# don't promote to Gold — the test should error, not warn.
+
+models:
+  - name: stg_orders
+    description: Cleaned orders, one row per order_id, with chargeback proxy flag.
+    columns:
+      - name: order_id
+        description: Unique order identifier.
+        data_tests: [not_null, unique]
+      - name: customer_unique_id
+        description: Stable customer identity (joinable to dim_customers).
+        data_tests: [not_null]
+      - name: order_status
+        description: Canonical Olist order status.
+        data_tests:
+          - accepted_values:
+              values: [created, approved, invoiced, shipped, delivered, unavailable, canceled, processing]
+
+  - name: stg_customers
+    description: >
+      Customer dimension at the customer_unique_id grain.
+      MUST be 1:1 with customer_unique_id — a violation here is the
+      class of bug that propagates row multiplication into the
+      feature store via joins.
+    columns:
+      - name: customer_unique_id
+        description: Stable identity. Primary key of this dimension.
+        data_tests: [not_null, unique]
+      - name: customer_state
+        description: Most recent shipping state for the customer.
+
+  - name: stg_order_items
+    columns:
+      - name: order_id
+        data_tests: [not_null]
+      - name: price
+        data_tests:
+          - expression_is_true:
+              expression: ">= 0"
+
+  - name: stg_order_payments
+    columns:
+      - name: order_id
+        data_tests: [not_null]
+
+  - name: stg_order_reviews
+    description: One row per order_id (deduped to latest review).
+    columns:
+      - name: order_id
+        data_tests: [not_null, unique]
+      - name: review_score
+        data_tests:
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
