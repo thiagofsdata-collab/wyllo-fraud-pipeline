@@ -1,0 +1,63 @@
+name: 'wyllo_fraud'
+version: '0.1.0'
+config-version: 2
+
+profile: 'wyllo_fraud'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# ---------------------------------------------------------------- Models
+#
+# Materialization strategy by layer:
+#   bronze : view  → cheap, always reflects latest raw
+#   silver : table → frozen, validated artifact
+#   gold   : table → analytical surface, queried by scoring + Streamlit
+#
+# This mirrors the Medallion architecture used in Databricks/lakehouse
+# practice and is intentionally consistent with how dbt teams configure
+# DuckDB and Snowflake in production.
+# ----------------------------------------------------------------
+models:
+  wyllo_fraud:
+    bronze:
+      +materialized: view
+      +schema: bronze
+      +tags: ["bronze", "raw_passthrough"]
+
+    silver:
+      +materialized: table
+      +schema: silver
+      +tags: ["silver", "cleaned"]
+
+    gold:
+      +materialized: table
+      +schema: gold
+      +tags: ["gold", "fraud_features"]
+      +meta:
+        owner: "fraud_engineering"
+        contains_pii: false
+
+seeds:
+  wyllo_fraud:
+    +schema: seeds
+    +quote_columns: false
+
+# Vars used by macros and models — overridable per environment.
+vars:
+  velocity_windows_hours: [1, 24, 168]   # 1h, 24h, 7d
+  cancellation_post_approval_threshold_h: 72
+  low_review_score_threshold: 2
+  geographic_velocity_implausible_kmh: 800
+
+tests:
+  +severity: warn
+  +store_failures: true

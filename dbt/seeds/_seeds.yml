@@ -1,0 +1,46 @@
+version: 2
+
+seeds:
+  - name: payment_method_risk
+    description: >
+      Base risk score per payment method. Owned by the fraud-ops team and
+      updated via PR — every change is auditable. Joined into the gold
+      feature table to produce `payment_method_risk_score`.
+    columns:
+      - name: payment_type
+        data_tests: [unique, not_null]
+      - name: base_risk_score
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "between 0 and 1"
+
+  - name: risk_thresholds
+    description: >
+      Tier boundaries for the combined fraud score. Changes here directly
+      affect the manual-review queue volume — never edit without sign-off.
+    columns:
+      - name: tier
+        data_tests:
+          - unique
+          - not_null
+          - accepted_values:
+              values: [low, medium, high, critical]
+      - name: action
+        data_tests:
+          - accepted_values:
+              values: [auto_approve, monitor, manual_review, block_and_investigate]
+
+  - name: category_risk_priors
+    description: >
+      Historical fraud-rate priors per product category. Seeded from
+      industry benchmarks and refined quarterly against observed
+      cancellation-after-approval rates.
+    columns:
+      - name: product_category_name_english
+        data_tests: [unique, not_null]
+      - name: fraud_prior
+        data_tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "between 0 and 1"

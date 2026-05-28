@@ -1,0 +1,13 @@
+product_category_name_english,fraud_prior,evidence
+electronics,0.45,High resale value + small form factor — top INR target
+computers_accessories,0.42,Same as electronics
+telephony,0.40,Mobile phones are #1 stolen-card target globally
+watches_gifts,0.38,Luxury resale value; common in friendly fraud
+audio,0.30,Headphones and speakers; moderate resale value
+fashion_bags_accessories,0.25,Luxury bag resale market drives elevated risk
+health_beauty,0.18,Moderate — diversion / reseller abuse
+sports_leisure,0.15,Moderate baseline
+toys,0.12,Low — seasonal abuse only
+furniture_decor,0.10,Bulky, hard to resell — low fraud rate
+housewares,0.08,Low resale value
+food,0.05,Perishable — near-zero fraud incentive

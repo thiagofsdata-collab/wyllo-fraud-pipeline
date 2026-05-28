@@ -1,0 +1,220 @@
+version: 2
+
+# ============================================================================
+# Olist source declarations
+# ----------------------------------------------------------------------------
+# These are the raw CSVs as landed in S3 (or local ./data/raw/ for dev).
+# Bronze models do nothing more than SELECT * FROM {{ source(...) }} plus
+# load metadata. All semantic enrichment happens in silver/gold.
+#
+# All descriptions are written in BUSINESS-FACING English because the RAG
+# layer will index this file and answer analyst questions over it.
+# ============================================================================
+
+sources:
+  - name: olist_raw
+    description: >
+      Raw Brazilian e-commerce transactional data from the Olist marketplace,
+      reshaped as the substrate for fraud-prevention feature engineering.
+      Loaded daily (or streamed every minute by the synthetic generator)
+      from S3 into DuckDB via the `httpfs` extension.
+    database: wyllo
+    schema: raw
+    loader: s3_to_duckdb
+    loaded_at_field: _loaded_at
+    freshness:
+      warn_after: { count: 6, period: hour }
+      error_after: { count: 24, period: hour }
+
+    tables:
+      # ---------------------------------------------------------------- orders
+      - name: olist_orders
+        identifier: olist_orders_dataset
+        description: >
+          One row per purchase. The spine of the fraud feature store —
+          all velocity windows, cancellation proxies and geographic signals
+          anchor on this table.
+        columns:
+          - name: order_id
+            description: Surrogate key, unique per order.
+            data_tests:
+              - unique
+              - not_null
+          - name: customer_id
+            description: >
+              Per-order customer identifier. **Not** stable across orders;
+              for cross-order identity use customer_unique_id from olist_customers.
+            data_tests:
+              - not_null
+              - relationships:
+                  to: source('olist_raw', 'olist_customers_dataset')
+                  field: customer_id
+          - name: order_status
+            description: >
+              One of {created, approved, invoiced, shipped, delivered,
+              unavailable, canceled}. The transitions `approved → canceled`
+              and `delivered + low review` are our chargeback proxies.
+            data_tests:
+              - accepted_values:
+                  values: [created, approved, invoiced, shipped, delivered, unavailable, canceled, processing]
+          - name: order_purchase_timestamp
+            description: When the customer placed the order. Anchor for all velocity windows.
+            data_tests:
+              - not_null
+          - name: order_approved_at
+            description: When payment was approved. Gap to purchase_ts is a fraud signal.
+          - name: order_delivered_carrier_date
+          - name: order_delivered_customer_date
+          - name: order_estimated_delivery_date
+
+      # ----------------------------------------------------------- order items
+      - name: olist_order_items
+        identifier: olist_order_items_dataset
+        description: >
+          One row per (order, item, seller). Multi-seller orders produce
+          multiple rows. Used to compute per-seller velocity and basket value.
+        columns:
+          - name: order_id
+            data_tests:
+              - not_null
+              - relationships:
+                  to: source('olist_raw', 'olist_orders_dataset')
+                  field: order_id
+          - name: order_item_id
+            description: Sequential index of the item within the order (1, 2, 3...).
+          - name: product_id
+            data_tests: [not_null]
+          - name: seller_id
+            data_tests: [not_null]
+          - name: shipping_limit_date
+          - name: price
+            description: Item price in BRL.
+            data_tests:
+              - not_null
+              - dbt_utils.expression_is_true:
+                  expression: ">= 0"
+          - name: freight_value
+            description: Shipping cost in BRL.
+
+      # --------------------------------------------------------------- payments
+      - name: olist_order_payments
+        identifier: olist_order_payments_dataset
+        description: >
+          One row per payment slice. Orders can be paid with multiple
+          methods (split-payment) — counted via `payment_sequential`.
+        columns:
+          - name: order_id
+            data_tests:
+              - not_null
+              - relationships:
+                  to: source('olist_raw', 'olist_orders_dataset')
+                  field: order_id
+          - name: payment_sequential
+            description: 1, 2, 3... when an order is paid across multiple methods.
+          - name: payment_type
+            description: One of {credit_card, boleto, voucher, debit_card, not_defined}.
+            data_tests:
+              - accepted_values:
+                  values: [credit_card, boleto, voucher, debit_card, not_defined]
+          - name: payment_installments
+            description: 1..24. High values on small tickets are a stolen-card pattern.
+          - name: payment_value
+            description: Payment amount in BRL.
+            data_tests:
+              - dbt_utils.expression_is_true:
+                  expression: ">= 0"
+
+      # ---------------------------------------------------------------- reviews
+      - name: olist_order_reviews
+        identifier: olist_order_reviews_dataset
+        description: >
+          Post-delivery customer reviews. `review_score <= 2` on delivered
+          orders is our proxy for item-not-received disputes and friendly fraud.
+        columns:
+          - name: review_id
+            data_tests: [not_null]
+          - name: order_id
+            data_tests:
+              - not_null
+              - relationships:
+                  to: source('olist_raw', 'olist_orders_dataset')
+                  field: order_id
+          - name: review_score
+            description: 1 (worst) to 5 (best).
+            data_tests:
+              - accepted_values:
+                  values: [1, 2, 3, 4, 5]
+          - name: review_comment_title
+          - name: review_comment_message
+          - name: review_creation_date
+          - name: review_answer_timestamp
+
+      # ------------------------------------------------------------- customers
+      - name: olist_customers
+        identifier: olist_customers_dataset
+        description: >
+          The customer dimension. Critical distinction: `customer_id` is
+          per-order, `customer_unique_id` is the stable identity used to
+          compute cross-order velocity.
+        columns:
+          - name: customer_id
+            data_tests: [unique, not_null]
+          - name: customer_unique_id
+            description: Stable identity across orders — use this for velocity.
+            data_tests: [not_null]
+          - name: customer_zip_code_prefix
+            description: First 5 digits of zip code. Joinable to olist_geolocation.
+          - name: customer_city
+          - name: customer_state
+            description: 2-letter Brazilian state code.
+
+      # --------------------------------------------------------------- sellers
+      - name: olist_sellers
+        identifier: olist_sellers_dataset
+        description: Merchant dimension. Aggregations on this table give seller-level risk.
+        columns:
+          - name: seller_id
+            data_tests: [unique, not_null]
+          - name: seller_zip_code_prefix
+          - name: seller_city
+          - name: seller_state
+
+      # --------------------------------------------------------------- products
+      - name: olist_products
+        identifier: olist_products_dataset
+        description: Product catalog. Category is used to apply category-level fraud priors.
+        columns:
+          - name: product_id
+            data_tests: [unique, not_null]
+          - name: product_category_name
+            description: Portuguese category — translated via product_category_name_translation.
+          - name: product_name_lenght
+          - name: product_description_lenght
+          - name: product_photos_qty
+          - name: product_weight_g
+          - name: product_length_cm
+          - name: product_height_cm
+          - name: product_width_cm
+
+      # ----------------------------------------------------------- geolocation
+      - name: olist_geolocation
+        identifier: olist_geolocation_dataset
+        description: >
+          ZIP-prefix → (lat, lng) lookup. Joined to customers and sellers
+          to compute haversine distance and geographic velocity features.
+        columns:
+          - name: geolocation_zip_code_prefix
+          - name: geolocation_lat
+          - name: geolocation_lng
+          - name: geolocation_city
+          - name: geolocation_state
+
+      # -------------------------------------------------------- category dict
+      - name: product_category_translation
+        identifier: product_category_name_translation
+        description: Maps Portuguese product categories to English. Used for analyst UX.
+        columns:
+          - name: product_category_name
+            data_tests: [unique, not_null]
+          - name: product_category_name_english
+            data_tests: [not_null]

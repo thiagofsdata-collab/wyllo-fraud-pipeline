@@ -1,0 +1,39 @@
+# profiles.yml for dbt-duckdb
+#
+# DuckDB acts as both the engine AND the warehouse here. The `extensions`
+# block loads `httpfs` so dbt can read Parquet from S3 directly without
+# round-tripping through pandas, and `aws` for IAM credential chaining.
+#
+# In CI we run against `target: ci` which uses an in-container DuckDB file
+# and the S3 mock (moto). In dev we use `target: dev` which talks to real S3.
+
+wyllo_fraud:
+  target: dev
+  outputs:
+
+    dev:
+      type: duckdb
+      path: "../data/warehouse/wyllo_dev.duckdb"
+      extensions:
+        - httpfs
+        - aws
+        - parquet
+      settings:
+        s3_region: "{{ env_var('AWS_REGION', 'us-east-1') }}"
+        s3_access_key_id: "{{ env_var('AWS_ACCESS_KEY_ID', '') }}"
+        s3_secret_access_key: "{{ env_var('AWS_SECRET_ACCESS_KEY', '') }}"
+      threads: 4
+
+    ci:
+      type: duckdb
+      path: ":memory:"
+      extensions: [parquet]
+      threads: 2
+
+    prod:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PROD_PATH') }}"
+      extensions: [httpfs, aws, parquet]
+      settings:
+        s3_region: "{{ env_var('AWS_REGION') }}"
+      threads: 8

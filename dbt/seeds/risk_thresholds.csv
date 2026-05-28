@@ -1,0 +1,5 @@
+tier,lower_bound_inclusive,upper_bound_exclusive,action
+low,0.00,0.30,auto_approve
+medium,0.30,0.60,monitor
+high,0.60,0.85,manual_review
+critical,0.85,1.01,block_and_investigate

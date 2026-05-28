@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.env
+.env.local
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# dbt
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+profiles.yml.local
+
+# Data — raw is too large to commit; download via make
+data/raw/*.csv
+data/raw/*.parquet
+data/bronze/
+data/silver/
+data/gold/
+data/warehouse/*.duckdb
+data/warehouse/*.duckdb.wal
+
+# Vectorstore — rebuilt deterministically from dbt docs
+ai/vectorstore/index.faiss
+ai/vectorstore/index.pkl
+
+# Dagster
+.dagster/
+dagster_home/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Streamlit
+.streamlit/secrets.toml
+
+# AWS
+.aws/
+
+# Local model artifacts (Isolation Forest pickle)
+scoring/artifacts/*.pkl
+
+
