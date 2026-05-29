@@ -89,3 +89,11 @@ markers = [
     "integration: tests that touch DuckDB or S3 mocks",
     "slow: tests over 5s",
 ]
+
+[tool.setuptools]
+# This project is a pipeline collection (multiple independent modules:
+# ingestion, dbt, orchestration, streamlit), not a single installable
+# library. Tell setuptools to not try to discover packages — we install
+# in editable mode just to get dependencies, not to expose an importable
+# package named "wyllo-fraud-pipeline".
+py-modules = []
