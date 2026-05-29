@@ -25,7 +25,7 @@ RAW_DIR = Path("data/raw")
 def upload(bucket: str, prefix: str = "raw") -> int:
     try:
         import boto3
-        from botocore.exceptions import NoCredentialsError, ClientError
+        from botocore.exceptions import ClientError, NoCredentialsError
     except ImportError:
         print("boto3 not installed. Run: pip install boto3")
         return 1

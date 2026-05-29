@@ -11,9 +11,7 @@ sources to depend on `olist_raw_loaded` from ingestion_assets, so the
 asset graph is connected end-to-end: ingestion -> sources -> bronze ->
 silver -> gold.
 """
-from collections.abc import Iterable
 from pathlib import Path
-from typing import Optional
 
 from dagster import AssetExecutionContext, AssetKey
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
@@ -37,7 +35,7 @@ class WylloDbtTranslator(DagsterDbtTranslator):
     edge is added via get_deps, not by collapsing their keys.
     """
 
-    def get_group_name(self, dbt_resource_props: dict) -> Optional[str]:
+    def get_group_name(self, dbt_resource_props: dict) -> str | None:
         name = dbt_resource_props.get("name", "")
         if name.startswith("br_"):
             return "bronze"

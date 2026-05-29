@@ -5,11 +5,11 @@ from pathlib import Path
 # Make sibling utils/ importable when run via `streamlit run pages/...`
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import plotly.express as px  # noqa: E402
-import streamlit as st  # noqa: E402
+import plotly.express as px
+from utils.data import db_exists, get_layer_row_counts
+from utils.styles import LAYER_COLORS
 
-from utils.data import db_exists, get_layer_row_counts  # noqa: E402
-from utils.styles import LAYER_COLORS  # noqa: E402
+import streamlit as st
 
 st.set_page_config(page_title="Medallion Layers", page_icon="📊", layout="wide")
 st.title("📊 Medallion Layers")
@@ -27,7 +27,7 @@ if df.empty:
 # ------ KPIs per layer
 layers_order = ["main_bronze", "main_silver", "main_gold", "main_seeds"]
 cols = st.columns(len(layers_order))
-for col, layer in zip(cols, layers_order):
+for col, layer in zip(cols, layers_order, strict=True):
     sub = df[df["layer"] == layer]
     n_tables = len(sub)
     max_rows = int(sub["row_count"].max()) if not sub.empty else 0

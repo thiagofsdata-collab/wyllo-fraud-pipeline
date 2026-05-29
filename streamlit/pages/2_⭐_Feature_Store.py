@@ -4,15 +4,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import plotly.express as px  # noqa: E402
-import streamlit as st  # noqa: E402
-
-from utils.data import (  # noqa: E402
+import plotly.express as px
+from utils.data import (
     db_exists,
     get_feature_store_summary,
     get_feature_store_top_risky,
     get_risk_distribution,
 )
+
+import streamlit as st
 
 st.set_page_config(page_title="Feature Store", page_icon="⭐", layout="wide")
 st.title("⭐ Feature Store")
@@ -38,7 +38,7 @@ c3.metric("Monthly snapshots", f"{int(kpi['snapshots'])}")
 c4.metric(
     "Avg cancel rate",
     f"{(kpi['avg_cancel_rate'] or 0) * 100:.2f}%",
-    help="Across all customer × snapshot rows.",
+    help="Across all customer x snapshot rows.",
 )
 
 st.divider()

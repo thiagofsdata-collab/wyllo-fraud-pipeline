@@ -23,7 +23,7 @@ Run from project root:
 from __future__ import annotations
 
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import duckdb
@@ -55,7 +55,7 @@ def verify_raw_files() -> list[str]:
 
 def load_csvs_to_duckdb(con: duckdb.DuckDBPyConnection) -> None:
     """Load each CSV into the raw schema with ingestion metadata."""
-    loaded_at = datetime.now(timezone.utc).isoformat()
+    loaded_at = datetime.now(UTC).isoformat()
 
     con.execute("CREATE SCHEMA IF NOT EXISTS raw;")
 

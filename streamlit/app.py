@@ -16,13 +16,13 @@ Elementary, not on a fraud-investigation tool. It surfaces:
 It is NOT for fraud analysts deciding on individual cases (that would be
 a separate downstream product the feature store feeds).
 """
-import streamlit as st
-
 from utils.data import (
     db_exists,
     get_feature_store_summary,
     get_orders_overview,
 )
+
+import streamlit as st
 
 st.set_page_config(
     page_title="Wyllo Fraud Pipeline",
@@ -72,7 +72,7 @@ col3.metric(
 col4.metric(
     "Feature store rows",
     f"{int(fs_kpi.get('total_rows', 0) or 0):,}",
-    help="Rows in fct_customer_return_risk_features (customer × monthly snapshot).",
+    help="Rows in fct_customer_return_risk_features (customer x monthly snapshot).",
 )
 
 st.divider()

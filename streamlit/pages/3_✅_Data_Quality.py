@@ -4,11 +4,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import plotly.express as px  # noqa: E402
-import streamlit as st  # noqa: E402
+import plotly.express as px
+from utils.data import get_dbt_test_results, manifest_exists
+from utils.styles import COLORS
 
-from utils.data import get_dbt_test_results, manifest_exists  # noqa: E402
-from utils.styles import COLORS  # noqa: E402
+import streamlit as st
 
 st.set_page_config(page_title="Data Quality", page_icon="✅", layout="wide")
 st.title("✅ Data Quality")
