@@ -70,8 +70,8 @@ def load_csvs_to_duckdb(con: duckdb.DuckDBPyConnection) -> None:
             CREATE OR REPLACE TABLE raw.{table_name} AS
             SELECT
                 *,
-                '{loaded_at}'        AS _loaded_at,
-                '{csv_file}'         AS _source_file
+                '{loaded_at}' AS _loaded_at,
+                '{csv_file}' AS _source_file
             FROM read_csv_auto('{csv_path}', header=true, sample_size=-1);
             """
         )

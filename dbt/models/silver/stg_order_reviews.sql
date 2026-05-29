@@ -7,7 +7,7 @@ with reviews as (
 select
     review_id,
     order_id,
-    cast(review_score as integer)            as review_score,
-    try_cast(review_creation_date as date)   as review_creation_date
+    cast(review_score as integer) as review_score,
+    try_cast(review_creation_date as date) as review_creation_date
 from reviews
 where rn = 1

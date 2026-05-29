@@ -258,5 +258,6 @@ not failures:
 | Rule engine business logic            | Fraud Analyst's job. Pipeline exposes the features they query        |
 | Cross-merchant identity resolution    | The Wyllo moat. Requires data from multiple tenants we don't have    |
 | Chargeback ground-truth labels        | Would arrive 60-120d post-purchase from payment processors           |
+| Synthetic identity features (`sim_*`)  | Removed during build. Olist has no device/IP data — proxy didn't add demo value beyond what real signals already cover. |
 
 Each row above is a **question to ask Wyllo in the conversation**.

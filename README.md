@@ -7,7 +7,7 @@
 ## Intro
 
 Return fraud costs e-commerce ~$100B/year. **2% of customers cause 20% of
-fraudulent returns** (NRF). The hard part isn't blocking — it's
+fraudulent returns** (NRF). The hard part isn't blocking, it's
 **segmenting behaviour** so legitimate occasional-returners stay
 unblocked. This pipeline produces the feature store that makes that
 segmentation possible.
@@ -55,8 +55,7 @@ dbt model becomes a Dagster asset; the graph mirrors the dbt manifest.
 ### Streamlit — pipeline health dashboard
 
 Read-only view over the warehouse: row counts per layer, the feature
-store contents, and the last dbt test results. Modelled on Monte Carlo
-/ Elementary, not on a fraud-investigation tool.
+store contents, and the last dbt test results.
 
 ![Streamlit dashboard tour](docs/diagrams/streamlit_demo.gif)
 
@@ -66,9 +65,13 @@ store contents, and the last dbt test results. Modelled on Monte Carlo
 
 
 🟢 Layer 0 — Schema mapping, architecture, repo scaffold
+
 🟢 Layer 1 — Ingestion (CSVs → DuckDB + partitioned Parquet, S3-style layout)
+
 🟢 Layer 2 — dbt Bronze / Silver / Gold (17 models, 60 tests passing)
+
 🟢 Layer 3 — Dagster orchestration (29 assets, jobs, schedule, sensor)
+
 🟢 Layer 4 — Streamlit pipeline-health dashboard
 
 
@@ -118,9 +121,11 @@ The full one-command Docker setup ships with Layer 6.
 
 Full rationale: see `docs/ARCHITECTURE.md`.
 
+---
+
 ## Repository layout
 
-\`\`\`
+```
 wyllo-fraud-pipeline/
 ├── ingestion/
 │   ├── load_raw_to_duckdb.py   # The local-first loader (the one that runs)
@@ -145,7 +150,9 @@ wyllo-fraud-pipeline/
 │   ├── ARCHITECTURE.md
 │   └── diagrams/               # Excalidraw + Dagster screenshots
 └── .github/workflows/ci.yml
-\`\`\`
+```
+
+---
 
 ## What this pipeline does NOT do (by design)
 
@@ -176,3 +183,5 @@ These limits are interview discussion points, not failures.
    replicated from Gold.
 5. **Identity resolution** — cluster customer_unique_id by behavioural
    similarity. Wyllo's competitive moat; would require multi-tenant data.
+
+> Built with Claude (Anthropic) as a development assistant for documentation and scaffolding.

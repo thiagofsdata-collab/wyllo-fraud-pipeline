@@ -55,7 +55,7 @@ dagster_home/
 # Local model artifacts (Isolation Forest pickle)
 scoring/artifacts/*.pkl
 
-.notebooks/
+notebooks/
 
 # Data — too large to commit
 data/raw/*.csv

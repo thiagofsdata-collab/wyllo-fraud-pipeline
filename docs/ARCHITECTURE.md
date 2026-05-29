@@ -94,7 +94,7 @@ Solid = what runs today. See "Architectural decisions" below.
 | Orchestration | Dagster                | Asset graph, schedules, retries, alerts on data-quality failure             | Backfill any single asset   |
 | CI/CD       | GitHub Actions           | Run dbt tests + pytest on every PR. Block merge on red.                     | < 5 min full check          |
 | Pipeline UI | Streamlit + Plotly       | Pipeline health: row counts, freshness, test pass rates, lineage view       | Loads in < 3s               |
-| DataOps NL  | LangChain + FAISS        | Small utility — natural-language queries over the dbt catalog               | < 8s response (best-effort) |
+| DataOps NL  | (designed, not built — see README) | Catalog Q&A over dbt docs | N/A |
 
 ## Architectural decisions and trade-offs
 
@@ -143,8 +143,6 @@ be the actual warehouse. The pipeline doesn't care.
 - Documentation generated from `schema.yml` files — these become the
   input to the catalog NL search utility.
 
-Wyllo's data team publishes about dbt tests and DataOps culture publicly
-(LinkedIn, André Brandão), so this choice signals cultural alignment.
 
 ### Why Dagster (not Airflow)
 
