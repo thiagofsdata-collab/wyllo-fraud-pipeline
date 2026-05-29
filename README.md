@@ -29,7 +29,9 @@ Olist CSVs → S3 → Bronze → Silver → Gold │ fct_customer_return_risk_fe
 
 ## Architecture
 
-![Architecture](docs/diagrams/architecture.png)
+<p align="center">
+  <img src="docs/diagrams/architecture.png" alt="Architecture" width="600">
+</p>
 
 Full breakdown of layer responsibilities and tool-choice rationale in
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
