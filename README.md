@@ -27,22 +27,55 @@ Olist CSVs → S3 → Bronze → Silver → Gold │ fct_customer_return_risk_fe
                        (trains models)    (writes rules)        (Streamlit + Plotly)
 ```
 
-## Status
+## Architecture
+
+![Architecture](docs/diagrams/architecture.png)
+
+Full breakdown of layer responsibilities and tool-choice rationale in
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+## Pipeline running end-to-end
+
+### dbt — 17 models, 60 tests, zero warnings
+
+The Medallion pipeline materializing Bronze → Silver → Gold, followed
+by the full test suite passing on real Olist data.
+
+![dbt run and test](docs/diagrams/dbt_demo.gif)
+
+### Dagster — asset graph and orchestration
+
+Auto-derived lineage from ingestion through the feature store. Each
+dbt model becomes a Dagster asset; the graph mirrors the dbt manifest.
+
+![Dagster asset lineage](docs/diagrams/dagster_lineage.gif)
+
+### Streamlit — pipeline health dashboard
+
+Read-only view over the warehouse: row counts per layer, the feature
+store contents, and the last dbt test results. Modelled on Monte Carlo
+/ Elementary, not on a fraud-investigation tool.
+
+![Streamlit dashboard tour](docs/diagrams/streamlit_demo.gif)
+
+---
+
+## Status — what's built
 
 
-🟢 Layer 0 — Schema mapping, repo skeleton, design docs
+🟢 Layer 0 — Schema mapping, architecture, repo scaffold
+🟢 Layer 1 — Ingestion (CSVs → DuckDB + partitioned Parquet, S3-style layout)
+🟢 Layer 2 — dbt Bronze / Silver / Gold (17 models, 60 tests passing)
+🟢 Layer 3 — Dagster orchestration (29 assets, jobs, schedule, sensor)
+🟢 Layer 4 — Streamlit pipeline-health dashboard
 
-🟡 Layer 1 — Ingestion (S3 + Glue + Athena) — in progress
 
-⚪ Layer 2 — dbt Bronze / Silver / Gold
+📝 Out of scope by design — documented in this README:
 
-⚪ Layer 3 — Dagster orchestration
 
-⚪ Layer 4 — Streamlit pipeline health dashboard
-
-⚪ Layer 5 — DataOps NL catalog utility
-
-⚪ Layer 6 — Docker + CI
+- AWS deployment (S3 / Glue / Athena scripts wired but not provisioned)
+- RAG / AI catalog assistant (designed below)
+- ML model training (Data Scientist's job — pipeline ends at feature store)
 
 
 ## Design documents (read these first)
@@ -85,32 +118,32 @@ Full rationale: see `docs/ARCHITECTURE.md`.
 
 ## Repository layout
 
-```
+\`\`\`
 wyllo-fraud-pipeline/
-├── ingestion/          # boto3 + Glue Crawler + Athena
-│   ├── s3/
-│   ├── glue/
-│   └── athena/
-├── dbt/                # the heart — models + tests + seeds + macros
+├── ingestion/
+│   ├── load_raw_to_duckdb.py   # The local-first loader (the one that runs)
+│   ├── s3/                     # AWS S3 upload (wired, not deployed)
+│   ├── glue/                   # AWS Glue crawler trigger
+│   └── athena/                 # AWS Athena ad-hoc queries
+├── dbt/
 │   ├── models/
-│   │   ├── bronze/     # 1:1 raw + metadata
-│   │   ├── silver/     # cleaned, typed, deduped
-│   │   └── gold/       # fct_customer_return_risk_features
-│   ├── seeds/          # risk thresholds, category priors (CSV in git)
-│   ├── tests/          # custom singular tests
-│   └── macros/         # haversine, generate_snapshots
-├── orchestration/      # Dagster
-├── scoring/            # ONE notebook: handoff to Data Science
-├── ai_dataops/         # small utility: NL search over dbt catalog
-├── streamlit/          # pipeline health dashboard
-├── tests/              # pytest
+│   │   ├── bronze/             # 9 views, 1:1 raw + metadata
+│   │   ├── silver/             # 6 tables, cleaned/typed/deduped
+│   │   └── gold/               # int_orders_enriched + feature store
+│   ├── seeds/                  # risk thresholds, category priors
+│   ├── macros/                 # haversine, month_spine
+│   └── tests/generic/          # custom expression_is_true, unique_combination
+├── orchestration/              # Dagster — assets, jobs, schedule, sensor
+├── streamlit/                  # Pipeline health dashboard
+│   ├── app.py
+│   ├── pages/                  # 4 pages: Layers, Feature Store, Quality, Lineage
+│   └── utils/
 ├── docs/
 │   ├── SCHEMA_FRAUD_MAPPING.md
 │   ├── ARCHITECTURE.md
-│   └── diagrams/       # Excalidraw exports
-├── .github/workflows/
-└── pyproject.toml
-```
+│   └── diagrams/               # Excalidraw + Dagster screenshots
+└── .github/workflows/ci.yml
+\`\`\`
 
 ## What this pipeline does NOT do (by design)
 
@@ -123,3 +156,21 @@ wyllo-fraud-pipeline/
 | Device / IP fingerprint features    | Olist has none; simulation would be theater.                     |
 
 These limits are interview discussion points, not failures.
+
+
+## What I'd build next 
+
+1. **AWS deployment** — provision S3 + Glue + Athena via Terraform, flip
+   the dbt target from `local` to `prod`. The code is already wired.
+2. **Catalog RAG assistant** — the FAISS + LangChain pipeline sketched
+   below. ~1-2 days of work; the value would be analyst self-service over
+   the dbt docs.
+3. **Streaming ingestion path** — Kinesis Stream + Firehose → S3, to
+   replace batch upload. The downstream code (dbt + Dagster) is already
+   abstracted from this — only the entry path changes.
+4. **Real-time scoring complement** — the current pipeline is the batch
+   feature store. For pre-checkout (sub-second) decisions, I'd add a
+   feature serving layer (Feast / Tecton / Redis) with selected features
+   replicated from Gold.
+5. **Identity resolution** — cluster customer_unique_id by behavioural
+   similarity. Wyllo's competitive moat; would require multi-tenant data.
