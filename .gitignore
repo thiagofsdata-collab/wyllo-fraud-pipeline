@@ -55,4 +55,22 @@ dagster_home/
 # Local model artifacts (Isolation Forest pickle)
 scoring/artifacts/*.pkl
 
+.notebooks/
 
+# Data — too large to commit
+data/raw/*.csv
+data/raw/*.parquet
+data/bronze/
+data/silver/
+data/gold/
+data/warehouse/*.duckdb
+data/warehouse/*.duckdb.wal
+
+# dbt artifacts
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+
+# Dagster runtime
+.dagster_home/
+dagster_home/
