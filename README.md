@@ -1,5 +1,11 @@
 # Wyllo Return Fraud Pipeline
 
+![CI](https://github.com/thiagofsdata-collab/wyllo-fraud-pipeline/actions/workflows/ci.yml/badge.svg)
+![Python](https://img.shields.io/badge/python-3.12-blue)
+![dbt](https://img.shields.io/badge/dbt-1.10-orange)
+![Dagster](https://img.shields.io/badge/dagster-1.10-purple)
+![DuckDB](https://img.shields.io/badge/duckdb-1.5-yellow)
+
 > End-to-end data engineering pipeline that turns raw e-commerce transactional
 > data into a point-in-time feature store for return fraud and policy abuse
 > detection. 
